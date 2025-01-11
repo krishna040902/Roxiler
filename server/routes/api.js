@@ -1,9 +1,21 @@
 const router = require('express').Router();
 const axios = require('axios');
-const Transaction = require('../models/transactionModel');
+const ProductTransaction = require('../models/transactionModel');
 const dataURL = process.env.DATA_URL || '';
 
-// get api to get transaction data by month
+
+router.get('/initialize', async (req, res) => {
+    try {
+      const response = await axios.get('https://s3.amazonaws.com/roxiler.com/product_transaction.json');
+      await ProductTransaction.deleteMany(); // Clear existing data
+      await ProductTransaction.insertMany(response.data); // Seed database
+      res.status(200).send({ message: 'Database initialized successfully!' });
+    } catch (error) {
+      res.status(500).send({ error: 'Failed to initialize database' });
+    }
+  });
+
+  
 router.get('/transactions', async (req, res) => {
     try {
         const page = parseInt(req.query.page) - 1 || 0;
@@ -120,7 +132,6 @@ router.get('/bar-chart', async (req, res) => {
         const response = data.reduce((acc, curr) => {
             const currPrice = parseFloat(curr.price);
 
-            // calculation for price range such that all values <= priceRange && > priceRange-100 will fall in this range
             let priceRange = Math.ceil(currPrice / 100) * 100;
 
             if(priceRange == 100) 
@@ -130,7 +141,6 @@ router.get('/bar-chart', async (req, res) => {
             else 
                 priceRange = `${priceRange-100+1}-${priceRange}`;
 
-            // if current range does not exit then set to 1, else add 1
             acc[priceRange]++; 
             
             return acc;
@@ -144,7 +154,6 @@ router.get('/bar-chart', async (req, res) => {
 })
 
 
-// get api for pie chart, find unique categories and number of items from that category for the selected month regardless of the year
 router.get('/pie-chart', async (req, res) => {
     try {
         const month = !isNaN(parseInt(req.query.month)) ? parseInt(req.query.month) : 3;
@@ -196,16 +205,5 @@ router.get('/combined-data', async (req, res) => {
     }
 })
 
-
-// const initDb = async () => {
-//     try {
-//         const {data} = await axios.get(dataURL);
-//         const docs = await Transaction.insertMany(data);
-//         if(docs) console.log("Database Initialised Successfully");
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-// initDb();
 
 module.exports = router;

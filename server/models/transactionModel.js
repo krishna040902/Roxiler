@@ -32,6 +32,7 @@ const transactionSchema = mongoose.Schema({
         type:Date,
         required:true
     }
-});
+}, {collection : 'Sales'});
 
-module.exports = mongoose.model('transactions',transactionSchema);
+const ProductTransaction = mongoose.model('ProductTransaction',transactionSchema);
+module.exports = ProductTransaction;
